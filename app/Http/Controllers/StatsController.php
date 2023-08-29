@@ -28,7 +28,23 @@ class StatsController extends Controller
     }
 
     public function getSaleItemStats(Request $request) {
-        return response()->json('not implemented');
+        if(!$request->user_id) {
+            return response()->json('Invalid request', 400);
+        }
+        $max_item_number = 10;
+        $item_number = $request->item_number ? $request->item_number : 3;
+        if($item_number > $max_item_number) {
+            $item_number = $max_item_number;
+        }
+        $itemList = DB::table('merch_sales')
+            -> select('item_name', DB::raw('SUM(quantity * price) as "revenue"'))
+            -> where('merch_id', $request->user_id)
+            -> groupBy('item_name')
+            -> orderBy('revenue', 'desc')
+            -> limit($item_number)
+            -> get();
+
+        return response()->json($itemList);
     }
 
     public function getRevenueStats(Request $request) {
