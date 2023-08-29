@@ -13,7 +13,16 @@ class EventsController extends Controller
             return response()->json('Request is invalid', 400);
         }
         $events = $this->queryEvents($request->user_id, $request->page);
-        return response()->json($events);
+        if($request->format === 'pretty') {
+            $formattedEvents = [];
+            foreach ($events as $event) {
+                $formattedEvent = $this->formatEvent($event);
+                $formattedEvents[] = $formattedEvent;
+            }
+            return response()->json($formattedEvents);
+        } else {
+            return response()->json($events);
+        }
     }
 
     public function markEvent(Request $request) {
@@ -101,5 +110,33 @@ class EventsController extends Controller
     }
 
     private function formatEvent($event) {
+        // format event output
+        $formattedEvent = new stdClass();
+        $formattedEvent->user_id = $event->user_id;
+        $formattedEvent->event_id = $event->event_id;
+        $formattedEvent->invoker = $event->invoker;
+        $formattedEvent->eventType = $event->eventType;
+        $formattedEvent->timestamp = $event->timestamp;
+        $formattedEvent->message = '';
+        $description = '';
+        
+        // generate description text based on event type
+        switch($event->eventType) {
+            case 'follow':
+                $description = $event->invoker.' followed you!'; 
+                break;
+            case 'subscribe':
+                $description = $event->invoker.'(Tier'.$event->tier.') subscribed to you!'; 
+                break;
+            case 'donation':
+                $description = $event->invoker.' donated '.$event->amount.' '.$event->currency.' to you!';
+                $formattedEvent->message = $event->message;
+                break;
+            case 'merch_sale':
+                $description = $event->invoker.' bought '.$event->quantity.' '.$event->item_name.' from you for '.$event->price.'!';
+                break;
+        }
+        $formattedEvent->description = $description;
+        return $formattedEvent;
     }
 }
