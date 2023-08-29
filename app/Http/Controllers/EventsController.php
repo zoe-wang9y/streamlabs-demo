@@ -12,21 +12,29 @@ class EventsController extends Controller
         if(!$request->user_id){
             return response()->json('Request is invalid', 400);
         }
-        $events = $this->queryEvents($request->user_id, $request->page);
         if($request->format === 'pretty') {
-            $formattedEvents = [];
-            foreach ($events as $event) {
-                $formattedEvent = $this->formatEvent($event);
-                $formattedEvents[] = $formattedEvent;
-            }
+            $formattedEvents = $this->getFormattedEvents($request->user_id, $request->page);
             return response()->json($formattedEvents);
         } else {
+            $events = $this->queryEvents($request->user_id, $request->page);
             return response()->json($events);
         }
     }
 
     public function markEvent(Request $request) {
+        // need to modify table to add extra column to keep track of read/unread attributes
+        // implement later
         return response()->json('not implemented');
+    }
+
+    public function getFormattedEvents($user_id, $page) {
+        $events = $this->queryEvents($user_id, $page);
+        $formattedEvents = [];
+        foreach ($events as $event) {
+            $formattedEvent = $this->formatEvent($event);
+            $formattedEvents[] = $formattedEvent;
+        }
+        return $formattedEvents;
     }
 
     private function queryEvents($user_id, $page=0, $limit=100) {
